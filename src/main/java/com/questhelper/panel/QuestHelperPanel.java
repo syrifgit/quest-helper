@@ -27,6 +27,7 @@ package com.questhelper.panel;
 import com.questhelper.QuestHelperConfig;
 import com.questhelper.QuestHelperPlugin;
 import com.questhelper.managers.QuestManager;
+import com.questhelper.panel.regionfiltering.RegionFilterPanel;
 import com.questhelper.panel.skillfiltering.SkillFilterPanel;
 import com.questhelper.questhelpers.BasicQuestHelper;
 import com.questhelper.questhelpers.QuestDetails;
@@ -80,6 +81,7 @@ public class QuestHelperPanel extends PluginPanel
 	private JPanel statePanel;
 
 	private final JButton skillExpandButton = new JButton();
+	private JPanel regionsFilterSection;
 	private final IconTextField searchBar = new IconTextField();
 	private final FixedWidthPanel questListPanel = new FixedWidthPanel();
 	private final FixedWidthPanel questListWrapper = new FixedWidthPanel();
@@ -363,6 +365,51 @@ public class QuestHelperPanel extends PluginPanel
 			}
 		});
 
+		// Region filtering
+		JButton regionExpandButton = new JButton();
+		regionExpandButton.setForeground(Color.GRAY);
+		regionExpandButton.setIcon(COLLAPSED_ICON);
+		regionExpandButton.setHorizontalTextPosition(SwingConstants.LEFT);
+		regionExpandButton.setIconTextGap(10);
+
+		RegionFilterPanel regionFilterPanel = new RegionFilterPanel(questHelperPlugin.spriteManager, () -> {
+			questHelperPlugin.getClientThread().invokeLater(questManager::updateQuestList);
+		});
+		regionFilterPanel.setVisible(false);
+
+		JLabel regionFilterName = JGenerator.makeJLabel("Region filtering");
+		regionFilterName.setForeground(Color.WHITE);
+		questHelperPlugin.spriteManager.getSpriteAsync(2214, 0, sprite -> {
+			if (sprite != null)
+			{
+				SwingUtilities.invokeLater(() -> regionFilterName.setIcon(new ImageIcon(sprite)));
+			}
+		});
+
+		JPanel regionExpandBar = new JPanel();
+		regionExpandBar.setLayout(new BorderLayout());
+		regionExpandBar.setToolTipText("Choose league regions to filter quests by");
+		regionExpandBar.add(regionFilterName, BorderLayout.CENTER);
+		regionExpandBar.add(regionExpandButton, BorderLayout.EAST);
+
+		MouseAdapter regionExpandListener = new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent mouseEvent)
+			{
+				regionFilterPanel.setVisible(!regionFilterPanel.isVisible());
+				regionExpandButton.setIcon(regionFilterPanel.isVisible() ? EXPANDED_ICON : COLLAPSED_ICON);
+			}
+		};
+		regionExpandButton.addMouseListener(regionExpandListener);
+		regionExpandBar.addMouseListener(regionExpandListener);
+
+		regionsFilterSection = new JPanel();
+		regionsFilterSection.setLayout(new BorderLayout());
+		regionsFilterSection.setMinimumSize(new Dimension(PANEL_WIDTH, 0));
+		regionsFilterSection.add(regionExpandBar, BorderLayout.CENTER);
+		regionsFilterSection.add(regionFilterPanel, BorderLayout.SOUTH);
+
 		// Filter dropdown + search
 		allDropdownSections.setLayout(new BoxLayout(allDropdownSections, BoxLayout.Y_AXIS));
 		allDropdownSections.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -370,6 +417,10 @@ public class QuestHelperPanel extends PluginPanel
 		allDropdownSections.add(difficultyPanel);
 		allDropdownSections.add(orderPanel);
 		allDropdownSections.add(skillsFilterPanel);
+		allDropdownSections.add(regionsFilterSection);
+
+		// Set initial visibility based on config (not on a league world at panel creation time)
+		updateRegionFilterVisibility(false);
 
 		searchQuestsPanel.add(allDropdownSections, BorderLayout.NORTH);
 
@@ -807,6 +858,27 @@ public class QuestHelperPanel extends PluginPanel
 		else
 		{
 			skillExpandButton.setText(String.format("%d active", numFilteredSkills));
+		}
+	}
+
+	/**
+	 * Updates visibility of the region filter section based on config and world type.
+	 */
+	public void updateRegionFilterVisibility(boolean isLeagueWorld)
+	{
+		QuestHelperConfig.RegionFilterVisibility visibility = questHelperPlugin.getConfig().regionFilterVisibility();
+		switch (visibility)
+		{
+			case SHOW:
+				regionsFilterSection.setVisible(true);
+				break;
+			case HIDE:
+				regionsFilterSection.setVisible(false);
+				break;
+			case AUTO:
+			default:
+				regionsFilterSection.setVisible(isLeagueWorld);
+				break;
 		}
 	}
 }

@@ -683,6 +683,25 @@ public interface QuestHelperConfig extends Config
 		return false;
 	}
 
+	enum RegionFilterVisibility
+	{
+		AUTO,
+		SHOW,
+		HIDE
+	}
+
+	@ConfigItem(
+		keyName = "regionFilterVisibility",
+		name = "Region filtering",
+		description = "Controls when the league region filter is shown. Auto shows it only on league worlds.",
+		position = 5,
+		section = filterSection
+	)
+	default RegionFilterVisibility regionFilterVisibility()
+	{
+		return RegionFilterVisibility.AUTO;
+	}
+
 	@ConfigSection(
 		position = 5,
 		name = "Development",
