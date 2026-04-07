@@ -24,40 +24,32 @@
  */
 package com.questhelper.questinfo;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import net.runelite.api.gameval.SpriteID;
 
 /**
  * Regions available in OSRS leagues. Area codes match param 1017 values from the game cache.
  */
+@AllArgsConstructor
+@Getter
 public enum LeagueRegion
 {
-	MISTHALIN("Misthalin", 1, 2731),
-	KARAMJA("Karamja", 2, 2732),
-	ASGARNIA("Asgarnia", 3, 2733),
-	KANDARIN("Kandarin", 4, 2737),
-	MORYTANIA("Morytania", 5, 2735),
-	DESERT("Desert", 6, 2734),
-	TIRANNWN("Tirannwn", 7, 2739),
-	FREMENNIK("Fremennik Province", 8, 2738),
-	KOUREND("Kourend & Kebos", 10, 5468),
-	WILDERNESS("Wilderness", 11, 2736),
-	VARLAMORE("Varlamore", 21, 5887);
+	MISTHALIN("Misthalin", 1, SpriteID.TrailblazerMapShields._0),
+	KARAMJA("Karamja", 2, SpriteID.TrailblazerMapShields._1),
+	ASGARNIA("Asgarnia", 3, SpriteID.TrailblazerMapShields._2),
+	KANDARIN("Kandarin", 4, SpriteID.TrailblazerMapShields._6),
+	MORYTANIA("Morytania", 5, SpriteID.TrailblazerMapShields._4),
+	DESERT("Desert", 6, SpriteID.TrailblazerMapShields._3),
+	TIRANNWN("Tirannwn", 7, SpriteID.TrailblazerMapShields._8),
+	FREMENNIK("Fremennik Province", 8, SpriteID.TrailblazerMapShields._7),
+	KOUREND("Kourend & Kebos", 10, SpriteID.League4MapShields01._9),
+	WILDERNESS("Wilderness", 11, SpriteID.TrailblazerMapShields._5),
+	VARLAMORE("Varlamore", 21, SpriteID.League5MapShields01._10);
 
-	@Getter
 	private final String displayName;
-
-	@Getter
 	private final int areaCode;
-
-	@Getter
 	private final int spriteId;
-
-	LeagueRegion(String displayName, int areaCode, int spriteId)
-	{
-		this.displayName = displayName;
-		this.areaCode = areaCode;
-		this.spriteId = spriteId;
-	}
 
 	public static LeagueRegion fromAreaCode(int areaCode)
 	{

@@ -376,16 +376,15 @@ public class QuestHelperPlugin extends Plugin
 			SwingUtilities.invokeLater(panel::refreshSkillFiltering);
 		}
 
-		if (event.getGroup().equals(QuestHelperConfig.QUEST_HELPER_GROUP)
-			&& "regionFilterVisibility".equals(event.getKey()))
-		{
-			boolean isLeague = client.getWorldType().contains(WorldType.SEASONAL);
-			SwingUtilities.invokeLater(() -> panel.updateRegionFilterVisibility(isLeague));
-		}
-
 		if (!event.getGroup().equals(QuestHelperConfig.QUEST_HELPER_GROUP))
 		{
 			return;
+		}
+
+		if ("regionFilterVisibility".equals(event.getKey()))
+		{
+			boolean isLeague = client.getWorldType().contains(WorldType.SEASONAL);
+			SwingUtilities.invokeLater(() -> panel.updateRegionFilterVisibility(isLeague));
 		}
 
 		if (configEvents.contains(event.getKey()) || event.getKey().contains("skillfilter"))
