@@ -169,4 +169,25 @@ public class RegionFilterPanel extends JPanel
 	{
 		return selectedRegions.size();
 	}
+
+	/**
+	 * Clears all selected regions and resets button states.
+	 */
+	public void clearSelection()
+	{
+		if (selectedRegions.isEmpty())
+		{
+			return;
+		}
+		selectedRegions.clear();
+		LeagueFiltering.setSelectedRegions(null);
+		for (Component comp : getComponents())
+		{
+			if (comp instanceof JButton)
+			{
+				updateButtonState((JButton) comp, false);
+			}
+		}
+		onChanged.run();
+	}
 }

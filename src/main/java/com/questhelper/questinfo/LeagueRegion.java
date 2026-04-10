@@ -50,16 +50,4 @@ public enum LeagueRegion
 	private final String displayName;
 	private final int areaCode;
 	private final int spriteId;
-
-	public static LeagueRegion fromAreaCode(int areaCode)
-	{
-		for (LeagueRegion region : values())
-		{
-			if (region.areaCode == areaCode)
-			{
-				return region;
-			}
-		}
-		return null;
-	}
 }

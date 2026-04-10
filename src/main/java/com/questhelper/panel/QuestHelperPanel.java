@@ -40,6 +40,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.WorldType;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
@@ -82,6 +83,7 @@ public class QuestHelperPanel extends PluginPanel
 
 	private final JButton skillExpandButton = new JButton();
 	private JPanel regionsFilterSection;
+	private RegionFilterPanel regionFilterPanel;
 	private final IconTextField searchBar = new IconTextField();
 	private final FixedWidthPanel questListPanel = new FixedWidthPanel();
 	private final FixedWidthPanel questListWrapper = new FixedWidthPanel();
@@ -372,8 +374,10 @@ public class QuestHelperPanel extends PluginPanel
 		regionExpandButton.setHorizontalTextPosition(SwingConstants.LEFT);
 		regionExpandButton.setIconTextGap(10);
 
-		RegionFilterPanel regionFilterPanel = new RegionFilterPanel(questHelperPlugin.spriteManager, () -> {
+		regionFilterPanel = new RegionFilterPanel(questHelperPlugin.spriteManager, () -> {
 			questHelperPlugin.getClientThread().invokeLater(questManager::updateQuestList);
+			int count = regionFilterPanel.getSelectedCount();
+			regionExpandButton.setText(count > 0 ? String.format("%d active", count) : "");
 		});
 		regionFilterPanel.setVisible(false);
 
@@ -419,8 +423,8 @@ public class QuestHelperPanel extends PluginPanel
 		allDropdownSections.add(skillsFilterPanel);
 		allDropdownSections.add(regionsFilterSection);
 
-		// Set initial visibility based on config (not on a league world at panel creation time)
-		updateRegionFilterVisibility(false);
+		// Set initial visibility based on config and current world type
+		updateRegionFilterVisibility(questHelperPlugin.getClient().getWorldType().contains(WorldType.SEASONAL));
 
 		searchQuestsPanel.add(allDropdownSections, BorderLayout.NORTH);
 
@@ -867,18 +871,24 @@ public class QuestHelperPanel extends PluginPanel
 	public void updateRegionFilterVisibility(boolean isLeagueWorld)
 	{
 		QuestHelperConfig.RegionFilterVisibility visibility = questHelperPlugin.getConfig().regionFilterVisibility();
+		boolean shouldShow;
 		switch (visibility)
 		{
 			case SHOW:
-				regionsFilterSection.setVisible(true);
+				shouldShow = true;
 				break;
 			case HIDE:
-				regionsFilterSection.setVisible(false);
+				shouldShow = false;
 				break;
 			case AUTO:
 			default:
-				regionsFilterSection.setVisible(isLeagueWorld);
+				shouldShow = isLeagueWorld;
 				break;
+		}
+		regionsFilterSection.setVisible(shouldShow);
+		if (!shouldShow)
+		{
+			regionFilterPanel.clearSelection();
 		}
 	}
 }
