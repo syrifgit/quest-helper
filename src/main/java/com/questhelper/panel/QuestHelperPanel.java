@@ -77,6 +77,7 @@ public class QuestHelperPanel extends PluginPanel
 	private final JPanel searchQuestsPanel;
 
 	private final JPanel allDropdownSections = new JPanel();
+	private final JPanel filterStackPanel = new JPanel();
 	private final JComboBox<Enum> filterDropdown, difficultyDropdown, orderDropdown;
 	private final JComboBox<String> stateDropdown = new JComboBox<>();
 	private JPanel statePanel;
@@ -88,8 +89,25 @@ public class QuestHelperPanel extends PluginPanel
 	private final FixedWidthPanel questListPanel = new FixedWidthPanel();
 	private final FixedWidthPanel questListWrapper = new FixedWidthPanel();
 	private final JScrollPane scrollableContainer;
+	private final CardLayout viewportLayout = new CardLayout();
+	private final JPanel viewportContent = new JPanel(viewportLayout)
+	{
+		@Override
+		public Dimension getPreferredSize()
+		{
+			for (Component component : getComponents())
+			{
+				if (component.isVisible())
+				{
+					return component.getPreferredSize();
+				}
+			}
+			return super.getPreferredSize();
+		}
+	};
 	public static final int DROPDOWN_HEIGHT = 26;
 	public boolean questActive = false;
+	private String activeView = VIEW_QUEST_LIST;
 
 	private final ArrayList<QuestSelectPanel> questSelectPanels = new ArrayList<>();
 
@@ -103,6 +121,9 @@ public class QuestHelperPanel extends PluginPanel
 	private static final ImageIcon SETTINGS_ICON;
 	private static final ImageIcon COLLAPSED_ICON;
 	private static final ImageIcon EXPANDED_ICON;
+	private static final String VIEW_QUEST_LIST = "quest_list";
+	private static final String VIEW_QUEST_OVERVIEW = "quest_overview";
+	private static final String VIEW_SETTINGS = "settings";
 
 	private int nextDesiredScrollValue = 0;
 
@@ -323,21 +344,21 @@ public class QuestHelperPanel extends PluginPanel
 		skillExpandButton.setHorizontalTextPosition(SwingConstants.LEFT);
 		skillExpandButton.setIconTextGap(10);
 		skillExpandButton.addMouseListener(new MouseAdapter()
-	{
-		@Override
-		public void mousePressed(MouseEvent mouseEvent)
 		{
-			skillFilterPanel.setVisible(!skillFilterPanel.isVisible());
-			if (skillFilterPanel.isVisible())
+			@Override
+			public void mousePressed(MouseEvent mouseEvent)
 			{
-				skillExpandButton.setIcon(EXPANDED_ICON);
+				skillFilterPanel.setVisible(!skillFilterPanel.isVisible());
+				if (skillFilterPanel.isVisible())
+				{
+					skillExpandButton.setIcon(EXPANDED_ICON);
+				}
+				else
+				{
+					skillExpandButton.setIcon(COLLAPSED_ICON);
+				}
 			}
-			else
-			{
-				skillExpandButton.setIcon(COLLAPSED_ICON);
-			}
-		}
-	});
+		});
 
 		JPanel skillExpandBar = new JPanel();
 		skillExpandBar.setLayout(new BorderLayout());
@@ -426,13 +447,18 @@ public class QuestHelperPanel extends PluginPanel
 		// Set initial visibility based on config and current world type
 		updateRegionFilterVisibility(questHelperPlugin.getClient().getWorldType().contains(WorldType.SEASONAL));
 
-		searchQuestsPanel.add(allDropdownSections, BorderLayout.NORTH);
+		filterStackPanel.setLayout(new BoxLayout(filterStackPanel, BoxLayout.Y_AXIS));
+		filterStackPanel.setOpaque(false);
+		filterStackPanel.add(Box.createVerticalStrut(8));
+		filterStackPanel.add(allDropdownSections);
+
+		searchQuestsPanel.add(filterStackPanel, BorderLayout.NORTH);
 
 		// Wrapper
 		questListWrapper.setLayout(new BorderLayout());
 		questListWrapper.add(questListPanel, BorderLayout.NORTH);
 
-		scrollableContainer = new JScrollPane(questListWrapper);
+		scrollableContainer = new JScrollPane(viewportContent);
 		scrollableContainer.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
 
@@ -450,6 +476,9 @@ public class QuestHelperPanel extends PluginPanel
 
 		questOverviewWrapper.setLayout(new BorderLayout());
 		questOverviewWrapper.add(questOverviewPanel, BorderLayout.NORTH);
+		viewportContent.add(questListWrapper, VIEW_QUEST_LIST);
+		viewportContent.add(questOverviewWrapper, VIEW_QUEST_OVERVIEW);
+		viewportContent.add(assistLevelPanel, VIEW_SETTINGS);
 
 		if (questHelperPlugin.isDeveloperMode())
 		{
@@ -496,6 +525,10 @@ public class QuestHelperPanel extends PluginPanel
 			});
 			devModePanel.add(reloadQuest, BorderLayout.SOUTH);
 
+			JPanel previewNavPanel = new JPanel(new GridLayout(2, 1, 0, 4));
+			previewNavPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			devModePanel.add(previewNavPanel, BorderLayout.CENTER);
+
 			// State dropdown for BasicQuestHelper
 			stateDropdown.setFocusable(false);
 			stateDropdown.addItemListener((ev) -> {
@@ -522,7 +555,7 @@ public class QuestHelperPanel extends PluginPanel
 					}
 				}
 			});
-			
+
 			// Create a panel with label for the state dropdown
 			statePanel = makeDropdownPanel(stateDropdown, "Quest State");
 			statePanel.setPreferredSize(new Dimension(PANEL_WIDTH, DROPDOWN_HEIGHT));
@@ -547,12 +580,11 @@ public class QuestHelperPanel extends PluginPanel
 		if ((questOverviewPanel.currentQuest == null || !text.isEmpty()))
 		{
 			activateQuestList();
-			questSelectPanels.forEach(questListPanel::remove);
 			showMatchingQuests(text);
 		}
 		else
 		{
-			scrollableContainer.setViewportView(questOverviewWrapper);
+			showView(VIEW_QUEST_OVERVIEW);
 		}
 		revalidate();
 	}
@@ -594,21 +626,25 @@ public class QuestHelperPanel extends PluginPanel
 
 	private void showMatchingQuests(String text)
 	{
-		if (text.isEmpty())
+		questSelectPanels.forEach(questListPanel::remove);
+
+		if (text == null || text.isEmpty())
 		{
 			questSelectPanels.forEach(questListPanel::add);
-			return;
 		}
-
-		final String[] searchTerms = text.toLowerCase().split(" ");
-
-		questSelectPanels.forEach(listItem ->
+		else
 		{
-			if (Text.matchesSearchTerms(Arrays.asList(searchTerms), listItem.getKeywords()))
+			final String[] searchTerms = text.toLowerCase().split(" ");
+			questSelectPanels.forEach(listItem ->
 			{
-				questListPanel.add(listItem);
-			}
-		});
+				if (Text.matchesSearchTerms(Arrays.asList(searchTerms), listItem.getKeywords()))
+				{
+					questListPanel.add(listItem);
+				}
+			});
+		}
+		revalidate();
+		repaint();
 	}
 
 	public void refresh(List<QuestHelper> questHelpers, boolean loggedOut,
@@ -669,10 +705,11 @@ public class QuestHelperPanel extends PluginPanel
 		showMatchingQuests(searchBar.getText() != null ? searchBar.getText() : "");
 	}
 
+
 	public void addQuest(QuestHelper quest, boolean isActive)
 	{
 		allDropdownSections.setVisible(false);
-		scrollableContainer.setViewportView(questOverviewWrapper);
+		showView(VIEW_QUEST_OVERVIEW);
 
 		questOverviewPanel.addQuest(quest, isActive);
 		updateStateDropdown(quest);
@@ -710,7 +747,9 @@ public class QuestHelperPanel extends PluginPanel
 		questActive = false;
 		questOverviewPanel.removeQuest();
 		activateQuestList();
+		showMatchingQuests(searchBar.getText() != null ? searchBar.getText() : "");
 		updateStateDropdown(null);
+		scrollableContainer.getVerticalScrollBar().setValue(0);
 
 		repaint();
 		revalidate();
@@ -718,12 +757,12 @@ public class QuestHelperPanel extends PluginPanel
 
 	private boolean settingsPanelActive()
 	{
-		return scrollableContainer.getViewport().getView() == assistLevelPanel;
+		return VIEW_SETTINGS.equals(activeView);
 	}
 
 	private void activateSettings()
 	{
-		scrollableContainer.setViewportView(assistLevelPanel);
+		showView(VIEW_SETTINGS);
 		searchQuestsPanel.setVisible(false);
 
 		repaint();
@@ -734,7 +773,7 @@ public class QuestHelperPanel extends PluginPanel
 	{
 		if (questActive && searchBar.getText().isEmpty())
 		{
-			scrollableContainer.setViewportView(questOverviewWrapper);
+			showView(VIEW_QUEST_OVERVIEW);
 		}
 		else
 		{
@@ -748,12 +787,23 @@ public class QuestHelperPanel extends PluginPanel
 
 	private void activateQuestList()
 	{
-		scrollableContainer.setViewportView(questListWrapper);
+		showView(VIEW_QUEST_LIST);
 		searchQuestsPanel.setVisible(true);
 		allDropdownSections.setVisible(true);
 
 		repaint();
 		revalidate();
+	}
+
+	private void showView(String viewName)
+	{
+		if (viewName.equals(activeView))
+		{
+			return;
+		}
+
+		viewportLayout.show(viewportContent, viewName);
+		activeView = viewName;
 	}
 
 	private void updateStateDropdown(QuestHelper questHelper)
@@ -825,7 +875,7 @@ public class QuestHelperPanel extends PluginPanel
 		else
 		{
 			assistLevelPanel.rebuild(questHelper, configManager, this);
-			scrollableContainer.setViewportView(assistLevelPanel);
+			showView(VIEW_SETTINGS);
 			searchQuestsPanel.setVisible(false);
 		}
 	}

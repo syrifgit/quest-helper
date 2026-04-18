@@ -31,6 +31,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.questhelper.bank.banktab.BankTabItems;
 import com.questhelper.bank.banktab.PotionStorage;
+import com.questhelper.bank.banktab.QuestBankTabInterface;
 import com.questhelper.managers.*;
 import com.questhelper.panel.QuestHelperPanel;
 import com.questhelper.questhelpers.QuestHelper;
@@ -165,6 +166,10 @@ public class QuestHelperPlugin extends Plugin
 
 	@Inject
 	public SpriteManager spriteManager;
+
+  @Inject
+	private QuestBankTabInterface questBankTabInterface;
+
 
 	private QuestHelperPanel panel;
 
@@ -510,6 +515,11 @@ public class QuestHelperPlugin extends Plugin
 	public List<BankTabItems> getPluginBankTagItemsForSections()
 	{
 		return questBankManager.getBankTagService().getPluginBankTagItemsForSections(false);
+	}
+
+	public boolean isBankTabOpen()
+	{
+		return questBankTabInterface.isQuestTabActive();
 	}
 
 	public @Nullable QuestHelper getSelectedQuest()
